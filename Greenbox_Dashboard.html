@@ -141,7 +141,8 @@ body{background:#0f1117;font-family:Arial,sans-serif;color:#e2e8f0;padding:20px;
   </div>
 </div>
 <script>
-const API='https://script.google.com/macros/s/AKfycbwhAVGE8zhwPiXU5TJvv4rz9PFnC9RMTCz8IZw8zVJb_q0OfqzpkugFiyZiwjblRJpJ/exec';
+const SHEET_ID='1_Xn-QPj_uNG6fOcArvlryA_Rw66tzhMb96BuHfqoEWE';
+const API_URL='https://docs.google.com/spreadsheets/d/'+SHEET_ID+'/gviz/tq?tqx=out:json';
 let META=1.580;
 const MESES=[
   {l:'Ene–May',m1:1,d1:1,m2:5,d2:31,proy:0},
@@ -153,34 +154,37 @@ const MESES=[
 let rows=[],curYear=new Date().getFullYear(),curWeek=isoWeek(new Date());
 function isoWeek(d){const dt=new Date(Date.UTC(d.getFullYear(),d.getMonth(),d.getDate()));const day=dt.getUTCDay()||7;dt.setUTCDate(dt.getUTCDate()+4-day);const y1=new Date(Date.UTC(dt.getUTCFullYear(),0,1));return Math.ceil((((dt-y1)/864e5)+1)/7);}
 function weekBounds(y,w){const j=new Date(Date.UTC(y,0,4));const s=new Date(j);s.setUTCDate(j.getUTCDate()-(j.getUTCDay()||7)+1+(w-1)*7);const e=new Date(s);e.setUTCDate(s.getUTCDate()+6);return{s,e};}
-function parseDate(v){if(!v)return null;if(v instanceof Date){if(isNaN(v))return null;return new Date(Date.UTC(v.getFullYear(),v.getMonth(),v.getDate()));}const s=String(v).replace(/"/g,'').trim();if(!s||s==='0')return null;const p=s.split(/[\/\-]/);if(p.length!==3)return null;if(p[2].length===4)return new Date(Date.UTC(+p[2],+p[1]-1,+p[0]));if(p[0].length===4)return new Date(Date.UTC(+p[0],+p[1]-1,+p[2]));return new Date(Date.UTC(2000+ +p[2],+p[0]-1,+p[1]));}
-function parseNum(v){if(typeof v==='number')return v;return parseFloat(String(v).replace(/[^0-9.\-]/g,''))||0;}
 function isOrg(r){return(r.tipo||'').toString().toUpperCase().includes('ORGAN');}
 function cargarData(){
   setSt('loading','Conectando…');
-  const cb='gb_'+Date.now();
-  const t=setTimeout(()=>{setSt('err','Timeout');delete window[cb];},12000);
-  window[cb]=function(data){
-    clearTimeout(t);
+  const cb='gviz_'+Date.now();
+  const timer=setTimeout(()=>{setSt('err','Timeout');delete window[cb];},12000);
+  window[cb]=function(resp){
+    clearTimeout(timer);
     try{
-      rows=data.map(r=>{
-        const k=Object.keys(r);
-        const fecha=parseDate(r[k[0]]||r.FECHA||r.fecha);
-        const tipo=String(r[k[2]]||r.TIPO||'').trim();
-        const jabas=parseNum(r[k[3]]||r.JABAS||0);
-        const kilos=parseNum(r[k[4]]||r.KILOS||0)||jabas*19;
-        const precio=parseNum(r[k[5]]||r.PRECIO||0);
-        const costo=parseNum(r[k[6]]||r.COSTO||0)||kilos*precio;
-        return{fecha,prov:String(r[k[1]]||'').trim(),tipo,jabas,kilos,precio,costo};
-      }).filter(r=>r.fecha&&r.kilos>0);
+      const tbl=resp.table;
+      rows=tbl.rows.map(r=>{
+        const c=r.c;
+        let fecha=null;
+        if(c[0]&&c[0].v){const v=c[0].v;if(typeof v==='string'&&v.startsWith('Date(')){const p=v.replace('Date(','').replace(')','').split(',');fecha=new Date(Date.UTC(+p[0],+p[1],+p[2]));}else{const d=new Date(v);if(!isNaN(d))fecha=new Date(Date.UTC(d.getFullYear(),d.getMonth(),d.getDate()));}}
+        const prov=c[1]?String(c[1].v||'').trim():'';
+        const tipo=c[2]?String(c[2].v||'').trim():'';
+        const jabas=c[3]?parseFloat(c[3].v)||0:0;
+        const kilos=c[4]?parseFloat(c[4].v)||jabas*19:jabas*19;
+        const precio=c[5]?parseFloat(c[5].v)||0:0;
+        const costo=c[6]?parseFloat(c[6].v)||kilos*precio:kilos*precio;
+        return{fecha,prov,tipo,jabas,kilos,precio,costo};
+      }).filter(r=>r.fecha&&!isNaN(r.fecha)&&r.kilos>0);
       setSt('ok',rows.length+' registros · '+new Date().toLocaleTimeString('es-PE'));
     }catch(e){setSt('err','Error: '+e.message);}
     render();
     delete window[cb];
-    const s=document.getElementById('_jp');if(s)s.remove();
+    const s=document.getElementById('_gviz');if(s)s.remove();
   };
-  const s=document.createElement('script');s.id='_jp';s.src=API+'?callback='+cb;
-  s.onerror=()=>{clearTimeout(t);setSt('err','Error de conexión');};
+  const s=document.createElement('script');
+  s.id='_gviz';
+  s.src=API_URL+'&tqx=out:json;responseHandler:'+cb;
+  s.onerror=()=>{clearTimeout(timer);setSt('err','Error de conexión');};
   document.head.appendChild(s);
 }
 function setSt(t,m){const el=document.getElementById('sbadge');el.textContent=m;el.className='sbadge '+t;}
