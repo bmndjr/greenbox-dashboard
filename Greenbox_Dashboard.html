@@ -24,7 +24,6 @@ body{background:#0f1117;font-family:Arial,sans-serif;color:#e2e8f0;padding:20px;
 .ok{background:#1d3a2f;color:#7dd3a8}
 .err{background:#3a1f1f;color:#f87171}
 .loading{background:#2a2318;color:#fbbf24}
-/* tarjetas */
 .r1{display:grid;grid-template-columns:1.3fr 0.9fr 1.1fr 1.1fr;gap:12px;margin-bottom:14px}
 .card{background:#141824;border-radius:10px;padding:16px 18px;border:.5px solid #2d3748}
 .card-lbl{font-size:9px;color:#64748b;margin-bottom:8px;letter-spacing:.04em;text-transform:uppercase}
@@ -35,14 +34,12 @@ body{background:#0f1117;font-family:Arial,sans-serif;color:#e2e8f0;padding:20px;
 .hlbl{font-size:9px;color:#64748b;margin-bottom:4px;text-transform:uppercase;letter-spacing:.03em}
 .hval{font-size:22px;font-weight:500}
 .g{color:#7dd3a8}.a{color:#fbbf24}.b{color:#60a5fa}.r{color:#f87171}
-/* gráficos */
 .r2{display:grid;grid-template-columns:1.4fr 1fr;gap:12px;margin-bottom:14px}
 .cbox{background:#141824;border-radius:10px;padding:16px;border:.5px solid #2d3748}
 .ctit{font-size:11px;color:#94a3b8;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px}
 .leg{display:flex;gap:12px;flex-wrap:wrap}
 .leg span{display:flex;align-items:center;gap:4px;font-size:10px;color:#94a3b8}
 .dot{width:8px;height:8px;border-radius:50%;display:inline-block;flex-shrink:0}
-/* tabla */
 .r3{background:#141824;border-radius:10px;padding:16px 18px;border:.5px solid #2d3748}
 .stit{font-size:11px;color:#94a3b8;margin-bottom:12px;text-transform:uppercase;letter-spacing:.04em}
 .mt{width:100%;border-collapse:collapse;font-size:11px;table-layout:fixed}
@@ -52,10 +49,7 @@ body{background:#0f1117;font-family:Arial,sans-serif;color:#e2e8f0;padding:20px;
 .mt td:first-child{text-align:left;color:#94a3b8}
 .mt tr:last-child td{border-top:.5px solid #374151;border-bottom:none;font-weight:600;color:#e2e8f0}
 .pos{color:#7dd3a8}.neg{color:#f87171}.neu{color:#374151}
-@media(max-width:768px){
-  .r1{grid-template-columns:1fr 1fr}
-  .r2{grid-template-columns:1fr}
-}
+@media(max-width:768px){.r1{grid-template-columns:1fr 1fr}.r2{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
@@ -74,7 +68,6 @@ body{background:#0f1117;font-family:Arial,sans-serif;color:#e2e8f0;padding:20px;
       <span class="sbadge loading" id="sbadge">Conectando…</span>
     </div>
   </div>
-
   <div class="r1">
     <div class="card">
       <div class="card-lbl">KG acumulados campaña</div>
@@ -106,7 +99,6 @@ body{background:#0f1117;font-family:Arial,sans-serif;color:#e2e8f0;padding:20px;
       </div>
     </div>
   </div>
-
   <div class="r2">
     <div class="cbox">
       <div class="ctit">
@@ -131,7 +123,6 @@ body{background:#0f1117;font-family:Arial,sans-serif;color:#e2e8f0;padding:20px;
       <svg id="chart-b" viewBox="0 0 280 110" style="width:100%"></svg>
     </div>
   </div>
-
   <div class="r3">
     <div class="stit">Acumulado por período — Proyección vs Ejecutado</div>
     <table class="mt">
@@ -149,231 +140,60 @@ body{background:#0f1117;font-family:Arial,sans-serif;color:#e2e8f0;padding:20px;
     </table>
   </div>
 </div>
-
 <script>
-const API = 'https://script.google.com/macros/s/AKfycbxPqQ3ehf36kMd8Dhr_nmojGi3E9kvVuyuzaxCwLz2y4sl2mPUjTsRi4weBDQLwEWO_Fg/exec';
-let META = 1.580;
-const MESES = [
+const API='https://script.google.com/macros/s/AKfycbwhAVGE8zhwPiXU5TJvv4rz9PFnC9RMTCz8IZw8zVJb_q0OfqzpkugFiyZiwjblRJpJ/exec';
+let META=1.580;
+const MESES=[
   {l:'Ene–May',m1:1,d1:1,m2:5,d2:31,proy:0},
-  {l:'Junio',  m1:6,d1:1,m2:6,d2:30,proy:0},
-  {l:'Julio',  m1:7,d1:1,m2:7,d2:31,proy:0},
-  {l:'Agosto', m1:8,d1:1,m2:8,d2:31,proy:0},
+  {l:'Junio',m1:6,d1:1,m2:6,d2:30,proy:0},
+  {l:'Julio',m1:7,d1:1,m2:7,d2:31,proy:0},
+  {l:'Agosto',m1:8,d1:1,m2:8,d2:31,proy:0},
   {l:'Sep–Dic',m1:9,d1:1,m2:12,d2:31,proy:0},
 ];
-
-let rows=[], curYear=new Date().getFullYear(), curWeek=isoWeek(new Date());
-
-function isoWeek(d){
-  const dt=new Date(Date.UTC(d.getFullYear(),d.getMonth(),d.getDate()));
-  const day=dt.getUTCDay()||7;
-  dt.setUTCDate(dt.getUTCDate()+4-day);
-  const y1=new Date(Date.UTC(dt.getUTCFullYear(),0,1));
-  return Math.ceil((((dt-y1)/864e5)+1)/7);
-}
-function weekBounds(y,w){
-  const j=new Date(Date.UTC(y,0,4));
-  const s=new Date(j);
-  s.setUTCDate(j.getUTCDate()-(j.getUTCDay()||7)+1+(w-1)*7);
-  const e=new Date(s);e.setUTCDate(s.getUTCDate()+6);
-  return{s,e};
-}
-function parseDate(v){
-  if(!v)return null;
-  if(v instanceof Date){
-    if(isNaN(v))return null;
-    return new Date(Date.UTC(v.getFullYear(),v.getMonth(),v.getDate()));
-  }
-  const s=String(v).replace(/"/g,'').trim();
-  if(!s||s==='0'||s==='')return null;
-  const p=s.split(/[\/\-]/);
-  if(p.length!==3)return null;
-  if(p[2].length===4)return new Date(Date.UTC(+p[2],+p[1]-1,+p[0]));
-  if(p[0].length===4)return new Date(Date.UTC(+p[0],+p[1]-1,+p[2]));
-  return new Date(Date.UTC(2000+ +p[2],+p[0]-1,+p[1]));
-}
-function parseNum(v){
-  if(typeof v==='number')return v;
-  return parseFloat(String(v).replace(/[^0-9.\-]/g,''))||0;
-}
-function isOrg(r){
-  return (r.tipo||'').toString().toUpperCase().includes('ORGAN');
-}
-
+let rows=[],curYear=new Date().getFullYear(),curWeek=isoWeek(new Date());
+function isoWeek(d){const dt=new Date(Date.UTC(d.getFullYear(),d.getMonth(),d.getDate()));const day=dt.getUTCDay()||7;dt.setUTCDate(dt.getUTCDate()+4-day);const y1=new Date(Date.UTC(dt.getUTCFullYear(),0,1));return Math.ceil((((dt-y1)/864e5)+1)/7);}
+function weekBounds(y,w){const j=new Date(Date.UTC(y,0,4));const s=new Date(j);s.setUTCDate(j.getUTCDate()-(j.getUTCDay()||7)+1+(w-1)*7);const e=new Date(s);e.setUTCDate(s.getUTCDate()+6);return{s,e};}
+function parseDate(v){if(!v)return null;if(v instanceof Date){if(isNaN(v))return null;return new Date(Date.UTC(v.getFullYear(),v.getMonth(),v.getDate()));}const s=String(v).replace(/"/g,'').trim();if(!s||s==='0')return null;const p=s.split(/[\/\-]/);if(p.length!==3)return null;if(p[2].length===4)return new Date(Date.UTC(+p[2],+p[1]-1,+p[0]));if(p[0].length===4)return new Date(Date.UTC(+p[0],+p[1]-1,+p[2]));return new Date(Date.UTC(2000+ +p[2],+p[0]-1,+p[1]));}
+function parseNum(v){if(typeof v==='number')return v;return parseFloat(String(v).replace(/[^0-9.\-]/g,''))||0;}
+function isOrg(r){return(r.tipo||'').toString().toUpperCase().includes('ORGAN');}
 function cargarData(){
   setSt('loading','Conectando…');
-  const cbName='gb_'+Date.now();
-  const timer=setTimeout(()=>{
-    setSt('err','Timeout — verifica el script');
-    delete window[cbName];
-  },12000);
-  window[cbName]=function(data){
-    clearTimeout(timer);
+  const cb='gb_'+Date.now();
+  const t=setTimeout(()=>{setSt('err','Timeout');delete window[cb];},12000);
+  window[cb]=function(data){
+    clearTimeout(t);
     try{
       rows=data.map(r=>{
-        const keys=Object.keys(r);
-        const fecha=parseDate(r[keys[0]]||r.FECHA||r.fecha||r.Fecha);
-        const tipo=String(r[keys[2]]||r.TIPO||r.tipo||'').trim();
-        const jabas=parseNum(r[keys[3]]||r.JABAS||0);
-        const kilos=parseNum(r[keys[4]]||r.KILOS||0)||jabas*19;
-        const precio=parseNum(r[keys[5]]||r.PRECIO||0);
-        const costo=parseNum(r[keys[6]]||r['COSTO S/./KG']||r.COSTO||0)||kilos*precio;
-        return{fecha,prov:String(r[keys[1]]||'').trim(),tipo,jabas,kilos,precio,costo};
+        const k=Object.keys(r);
+        const fecha=parseDate(r[k[0]]||r.FECHA||r.fecha);
+        const tipo=String(r[k[2]]||r.TIPO||'').trim();
+        const jabas=parseNum(r[k[3]]||r.JABAS||0);
+        const kilos=parseNum(r[k[4]]||r.KILOS||0)||jabas*19;
+        const precio=parseNum(r[k[5]]||r.PRECIO||0);
+        const costo=parseNum(r[k[6]]||r.COSTO||0)||kilos*precio;
+        return{fecha,prov:String(r[k[1]]||'').trim(),tipo,jabas,kilos,precio,costo};
       }).filter(r=>r.fecha&&r.kilos>0);
       setSt('ok',rows.length+' registros · '+new Date().toLocaleTimeString('es-PE'));
     }catch(e){setSt('err','Error: '+e.message);}
     render();
-    delete window[cbName];
-    const s=document.getElementById('_jsonp');
-    if(s)s.remove();
+    delete window[cb];
+    const s=document.getElementById('_jp');if(s)s.remove();
   };
-  const s=document.createElement('script');
-  s.id='_jsonp';
-  s.src=API+'?callback='+cbName;
-  s.onerror=()=>{clearTimeout(timer);setSt('err','Error de conexión');delete window[cbName];};
+  const s=document.createElement('script');s.id='_jp';s.src=API+'?callback='+cb;
+  s.onerror=()=>{clearTimeout(t);setSt('err','Error de conexión');};
   document.head.appendChild(s);
 }
-
 function setSt(t,m){const el=document.getElementById('sbadge');el.textContent=m;el.className='sbadge '+t;}
 function wkRows(){const{s,e}=weekBounds(curYear,curWeek);return rows.filter(r=>r.fecha&&r.fecha>=s&&r.fecha<=e);}
-function byDay(rr){
-  const m={};
-  rr.forEach(r=>{
-    if(!r.fecha)return;
-    const k=r.fecha.toISOString().slice(0,10);
-    if(!m[k])m[k]={fecha:r.fecha,org:0,cd:0,oc:0,cc:0};
-    if(isOrg(r)){m[k].org+=r.kilos;m[k].oc+=r.costo;}
-    else{m[k].cd+=r.kilos;m[k].cc+=r.costo;}
-  });
-  return Object.values(m).sort((a,b)=>a.fecha-b.fecha);
-}
-
-function renderMetrics(){
-  const totKg=rows.reduce((a,r)=>a+r.kilos,0);
-  const totC=rows.reduce((a,r)=>a+r.costo,0);
-  const orgKg=rows.filter(isOrg).reduce((a,r)=>a+r.kilos,0);
-  const cdKg=rows.filter(r=>!isOrg(r)).reduce((a,r)=>a+r.kilos,0);
-  const act=totKg>0?totC/totKg:0;
-  const wkKg=wkRows().reduce((a,r)=>a+r.kilos,0);
-  document.getElementById('m-kg').textContent=totKg>0?Math.round(totKg).toLocaleString('es-PE'):'—';
-  document.getElementById('m-porg').textContent=totKg>0?Math.round(orgKg/totKg*100)+'%':'—';
-  document.getElementById('m-pcd').textContent=totKg>0?Math.round(cdKg/totKg*100)+'%':'—';
-  document.getElementById('m-kreq').textContent='—';
-  document.getElementById('m-kejec').textContent=wkKg>0?Math.round(wkKg).toLocaleString('es-PE'):'—';
-  document.getElementById('m-meta').textContent=META.toFixed(3);
-  const el=document.getElementById('m-actual');
-  el.textContent=act>0?act.toFixed(3):'—';
-  el.className='hval '+(act>0?(act<=META?'g':'r'):'');
-}
-
-function renderLinea(){
-  const svg=document.getElementById('chart-l');
-  const dias=byDay(wkRows());
-  if(!dias.length){svg.innerHTML='<text x="200" y="60" fill="#374151" font-size="12" text-anchor="middle">Sin datos esta semana</text>';return;}
-  const W=400,H=110,pL=42,pB=22,pT=12,pR=12,gW=W-pL-pR,gH=H-pB-pT;
-  const pts=dias.map(d=>{
-    const tK=d.org+d.cd,tC=d.oc+d.cc;
-    return{lbl:`${d.fecha.getUTCDate()}/${d.fecha.getUTCMonth()+1}`,org:d.org>0?d.oc/d.org:null,cd:d.cd>0?d.cc/d.cd:null,pond:tK>0?tC/tK:null};
-  });
-  const allV=[...pts.flatMap(p=>[p.org,p.cd,p.pond]).filter(v=>v!=null),META];
-  const mn=Math.min(...allV)*0.97,mx=Math.max(...allV)*1.03;
-  const xP=i=>pL+(i/(pts.length-1||1))*gW;
-  const yP=v=>pT+gH-((v-mn)/(mx-mn||1))*gH;
-  const mY=yP(META);
-  let o=`<line x1="${pL}" y1="${mY}" x2="${W-pR}" y2="${mY}" stroke="#4b5563" stroke-width="1.5" stroke-dasharray="6,4"/>`;
-  o+=`<text x="${pL-3}" y="${mY+4}" fill="#4b5563" font-size="8" text-anchor="end">${META.toFixed(3)}</text>`;
-  const dl=(key,col,dash='')=>{
-    const vld=pts.map((p,i)=>p[key]!=null?[i,p[key]]:null).filter(Boolean);
-    if(!vld.length)return'';
-    let s='';
-    if(vld.length>1)s+=`<polyline points="${vld.map(([i,v])=>`${xP(i)},${yP(v)}`).join(' ')}" fill="none" stroke="${col}" stroke-width="2.5" ${dash?`stroke-dasharray="${dash}"`:''}/>`;
-    vld.forEach(([i,v])=>{
-      s+=`<circle cx="${xP(i)}" cy="${yP(v)}" r="4" fill="${col}"/>`;
-      s+=`<text x="${xP(i)}" y="${yP(v)-8}" fill="${col}" font-size="8" text-anchor="middle" font-weight="600">${v.toFixed(3)}</text>`;
-    });
-    return s;
-  };
-  o+=dl('org','#1d9e75')+dl('cd','#378add','6,4')+dl('pond','#fbbf24','2,2');
-  o+=pts.map((p,i)=>`<text x="${xP(i)}" y="${H-5}" fill="#4b5563" font-size="8.5" text-anchor="middle">${p.lbl}</text>`).join('');
-  svg.innerHTML=o;
-}
-
-function renderBarras(){
-  const svg=document.getElementById('chart-b');
-  const dias=byDay(wkRows());
-  if(!dias.length){svg.innerHTML='<text x="140" y="60" fill="#374151" font-size="12" text-anchor="middle">Sin datos esta semana</text>';return;}
-  const W=280,H=110,pL=10,pB=22,pT=16,pR=10,gW=W-pL-pR,gH=H-pB-pT;
-  const maxK=Math.max(...dias.map(d=>d.org+d.cd),1);
-  const n=dias.length,sw=gW/n,bw=Math.min(sw*0.38,18);
-  let o=`<text x="${pL}" y="${pT-3}" fill="#7dd3a8" font-size="9">■ Org.</text>`;
-  o+=`<text x="${pL+46}" y="${pT-3}" fill="#60a5fa" font-size="9">■ CD</text>`;
-  dias.forEach((d,i)=>{
-    const x=pL+i*sw+sw/2;
-    const ho=(d.org/maxK)*gH,hc=(d.cd/maxK)*gH;
-    o+=`<rect x="${x-bw-1.5}" y="${pT+gH-ho}" width="${bw}" height="${ho}" fill="#1d9e75" opacity=".9" rx="2"/>`;
-    o+=`<rect x="${x+1.5}" y="${pT+gH-hc}" width="${bw}" height="${hc}" fill="#378add" opacity=".9" rx="2"/>`;
-    o+=`<text x="${x}" y="${H-5}" fill="#4b5563" font-size="8.5" text-anchor="middle">${d.fecha.getUTCDate()}/${d.fecha.getUTCMonth()+1}</text>`;
-  });
-  svg.innerHTML=o;
-}
-
-function renderTabla(){
-  const tb=document.getElementById('tbody');
-  let tP=0,tE=0,tC=0;
-  const dash='<span class="neu">—</span>';
-  const rws=MESES.map(m=>{
-    const ini=new Date(Date.UTC(2026,m.m1-1,m.d1));
-    const fin=new Date(Date.UTC(2026,m.m2-1,m.d2));
-    const mr=rows.filter(r=>r.fecha&&r.fecha>=ini&&r.fecha<=fin);
-    const eK=mr.reduce((a,r)=>a+r.kilos,0);
-    const eC=mr.reduce((a,r)=>a+r.costo,0);
-    const rP=eK>0?eC/eK:null;
-    const vK=m.proy>0?eK-m.proy:null;
-    const vP=rP!=null?rP-META:null;
-    tP+=m.proy;tE+=eK;tC+=eC;
-    return`<tr>
-      <td>${m.l}</td>
-      <td>${m.proy>0?m.proy.toLocaleString('es-PE'):dash}</td>
-      <td>${eK>0?Math.round(eK).toLocaleString('es-PE'):dash}</td>
-      <td class="${vK==null?'neu':vK>=0?'pos':'neg'}">${vK!=null?(vK>=0?'+':'')+Math.round(vK).toLocaleString('es-PE'):dash}</td>
-      <td>${META.toFixed(3)}</td>
-      <td>${rP!=null?rP.toFixed(3):dash}</td>
-      <td class="${vP==null?'neu':vP<=0?'pos':'neg'}">${vP!=null?(vP>=0?'+':'')+vP.toFixed(3):dash}</td>
-      <td>${eC>0?'S/. '+Math.round(eC).toLocaleString('es-PE'):dash}</td>
-    </tr>`;
-  });
-  const tPx=tE>0?tC/tE:null;
-  const tvP=tPx!=null?tPx-META:null;
-  rws.push(`<tr>
-    <td>TOTAL</td>
-    <td>${tP>0?tP.toLocaleString('es-PE'):dash}</td>
-    <td>${tE>0?Math.round(tE).toLocaleString('es-PE'):dash}</td>
-    <td class="${tE-tP>=0?'pos':'neg'}">${tP>0?(tE-tP>=0?'+':'')+Math.round(tE-tP).toLocaleString('es-PE'):dash}</td>
-    <td>${META.toFixed(3)}</td>
-    <td>${tPx!=null?tPx.toFixed(3):dash}</td>
-    <td class="${tvP!=null&&tvP<=0?'pos':'neg'}">${tvP!=null?(tvP>=0?'+':'')+tvP.toFixed(3):dash}</td>
-    <td>${tC>0?'S/. '+Math.round(tC).toLocaleString('es-PE'):dash}</td>
-  </tr>`);
-  tb.innerHTML=rws.join('');
-}
-
-function render(){
-  const MS=['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
-  const t=new Date();
-  document.getElementById('badge-semana').textContent='Semana '+curWeek;
-  document.getElementById('badge-fecha').textContent=`${t.getDate()} ${MS[t.getMonth()]} ${t.getFullYear()}`;
-  renderMetrics();renderLinea();renderBarras();renderTabla();
-}
-function buildSel(){
-  const s=document.getElementById('sel-semana');s.innerHTML='';
-  for(let w=1;w<=52;w++){const o=document.createElement('option');o.value=w;o.textContent=`Semana ${w}`;if(w===curWeek)o.selected=true;s.appendChild(o);}
-}
+function byDay(rr){const m={};rr.forEach(r=>{if(!r.fecha)return;const k=r.fecha.toISOString().slice(0,10);if(!m[k])m[k]={fecha:r.fecha,org:0,cd:0,oc:0,cc:0};if(isOrg(r)){m[k].org+=r.kilos;m[k].oc+=r.costo;}else{m[k].cd+=r.kilos;m[k].cc+=r.costo;}});return Object.values(m).sort((a,b)=>a.fecha-b.fecha);}
+function renderMetrics(){const tK=rows.reduce((a,r)=>a+r.kilos,0);const tC=rows.reduce((a,r)=>a+r.costo,0);const oK=rows.filter(isOrg).reduce((a,r)=>a+r.kilos,0);const act=tK>0?tC/tK:0;const wK=wkRows().reduce((a,r)=>a+r.kilos,0);document.getElementById('m-kg').textContent=tK>0?Math.round(tK).toLocaleString('es-PE'):'—';document.getElementById('m-porg').textContent=tK>0?Math.round(oK/tK*100)+'%':'—';document.getElementById('m-pcd').textContent=tK>0?Math.round((tK-oK)/tK*100)+'%':'—';document.getElementById('m-kreq').textContent='—';document.getElementById('m-kejec').textContent=wK>0?Math.round(wK).toLocaleString('es-PE'):'—';document.getElementById('m-meta').textContent=META.toFixed(3);const el=document.getElementById('m-actual');el.textContent=act>0?act.toFixed(3):'—';el.className='hval '+(act>0?(act<=META?'g':'r'):'');}
+function renderLinea(){const svg=document.getElementById('chart-l');const dias=byDay(wkRows());if(!dias.length){svg.innerHTML='<text x="200" y="60" fill="#374151" font-size="12" text-anchor="middle">Sin datos esta semana</text>';return;}const W=400,H=110,pL=42,pB=22,pT=12,pR=12,gW=W-pL-pR,gH=H-pB-pT;const pts=dias.map(d=>{const tK=d.org+d.cd,tC=d.oc+d.cc;return{lbl:`${d.fecha.getUTCDate()}/${d.fecha.getUTCMonth()+1}`,org:d.org>0?d.oc/d.org:null,cd:d.cd>0?d.cc/d.cd:null,pond:tK>0?tC/tK:null};});const allV=[...pts.flatMap(p=>[p.org,p.cd,p.pond]).filter(v=>v!=null),META];const mn=Math.min(...allV)*0.97,mx=Math.max(...allV)*1.03;const xP=i=>pL+(i/(pts.length-1||1))*gW;const yP=v=>pT+gH-((v-mn)/(mx-mn||1))*gH;const mY=yP(META);let o=`<line x1="${pL}" y1="${mY}" x2="${W-pR}" y2="${mY}" stroke="#4b5563" stroke-width="1.5" stroke-dasharray="6,4"/>`;o+=`<text x="${pL-3}" y="${mY+4}" fill="#4b5563" font-size="8" text-anchor="end">${META.toFixed(3)}</text>`;const dl=(key,col,dash='')=>{const vld=pts.map((p,i)=>p[key]!=null?[i,p[key]]:null).filter(Boolean);if(!vld.length)return'';let s='';if(vld.length>1)s+=`<polyline points="${vld.map(([i,v])=>`${xP(i)},${yP(v)}`).join(' ')}" fill="none" stroke="${col}" stroke-width="2.5" ${dash?`stroke-dasharray="${dash}"`:''}/>`; vld.forEach(([i,v])=>{s+=`<circle cx="${xP(i)}" cy="${yP(v)}" r="4" fill="${col}"/>`;s+=`<text x="${xP(i)}" y="${yP(v)-8}" fill="${col}" font-size="8" text-anchor="middle" font-weight="600">${v.toFixed(3)}</text>`;});return s;};o+=dl('org','#1d9e75')+dl('cd','#378add','6,4')+dl('pond','#fbbf24','2,2');o+=pts.map((p,i)=>`<text x="${xP(i)}" y="${H-5}" fill="#4b5563" font-size="8.5" text-anchor="middle">${p.lbl}</text>`).join('');svg.innerHTML=o;}
+function renderBarras(){const svg=document.getElementById('chart-b');const dias=byDay(wkRows());if(!dias.length){svg.innerHTML='<text x="140" y="60" fill="#374151" font-size="12" text-anchor="middle">Sin datos esta semana</text>';return;}const W=280,H=110,pL=10,pB=22,pT=16,pR=10,gW=W-pL-pR,gH=H-pB-pT;const maxK=Math.max(...dias.map(d=>d.org+d.cd),1);const n=dias.length,sw=gW/n,bw=Math.min(sw*0.38,18);let o=`<text x="${pL}" y="${pT-3}" fill="#7dd3a8" font-size="9">■ Org.</text>`;o+=`<text x="${pL+46}" y="${pT-3}" fill="#60a5fa" font-size="9">■ CD</text>`;dias.forEach((d,i)=>{const x=pL+i*sw+sw/2;const ho=(d.org/maxK)*gH,hc=(d.cd/maxK)*gH;o+=`<rect x="${x-bw-1.5}" y="${pT+gH-ho}" width="${bw}" height="${ho}" fill="#1d9e75" opacity=".9" rx="2"/>`;o+=`<rect x="${x+1.5}" y="${pT+gH-hc}" width="${bw}" height="${hc}" fill="#378add" opacity=".9" rx="2"/>`;o+=`<text x="${x}" y="${H-5}" fill="#4b5563" font-size="8.5" text-anchor="middle">${d.fecha.getUTCDate()}/${d.fecha.getUTCMonth()+1}</text>`;});svg.innerHTML=o;}
+function renderTabla(){const tb=document.getElementById('tbody');let tP=0,tE=0,tC=0;const dash='<span class="neu">—</span>';const rws=MESES.map(m=>{const ini=new Date(Date.UTC(2026,m.m1-1,m.d1));const fin=new Date(Date.UTC(2026,m.m2-1,m.d2));const mr=rows.filter(r=>r.fecha&&r.fecha>=ini&&r.fecha<=fin);const eK=mr.reduce((a,r)=>a+r.kilos,0);const eC=mr.reduce((a,r)=>a+r.costo,0);const rP=eK>0?eC/eK:null;const vK=m.proy>0?eK-m.proy:null;const vP=rP!=null?rP-META:null;tP+=m.proy;tE+=eK;tC+=eC;return`<tr><td>${m.l}</td><td>${m.proy>0?m.proy.toLocaleString('es-PE'):dash}</td><td>${eK>0?Math.round(eK).toLocaleString('es-PE'):dash}</td><td class="${vK==null?'neu':vK>=0?'pos':'neg'}">${vK!=null?(vK>=0?'+':'')+Math.round(vK).toLocaleString('es-PE'):dash}</td><td>${META.toFixed(3)}</td><td>${rP!=null?rP.toFixed(3):dash}</td><td class="${vP==null?'neu':vP<=0?'pos':'neg'}">${vP!=null?(vP>=0?'+':'')+vP.toFixed(3):dash}</td><td>${eC>0?'S/. '+Math.round(eC).toLocaleString('es-PE'):dash}</td></tr>`;});const tPx=tE>0?tC/tE:null;const tvP=tPx!=null?tPx-META:null;rws.push(`<tr><td>TOTAL</td><td>${tP>0?tP.toLocaleString('es-PE'):dash}</td><td>${tE>0?Math.round(tE).toLocaleString('es-PE'):dash}</td><td class="${tE-tP>=0?'pos':'neg'}">${tP>0?(tE-tP>=0?'+':'')+Math.round(tE-tP).toLocaleString('es-PE'):dash}</td><td>${META.toFixed(3)}</td><td>${tPx!=null?tPx.toFixed(3):dash}</td><td class="${tvP!=null&&tvP<=0?'pos':'neg'}">${tvP!=null?(tvP>=0?'+':'')+tvP.toFixed(3):dash}</td><td>${tC>0?'S/. '+Math.round(tC).toLocaleString('es-PE'):dash}</td></tr>`);tb.innerHTML=rws.join('');}
+function render(){const MS=['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];const t=new Date();document.getElementById('badge-semana').textContent='Semana '+curWeek;document.getElementById('badge-fecha').textContent=`${t.getDate()} ${MS[t.getMonth()]} ${t.getFullYear()}`;renderMetrics();renderLinea();renderBarras();renderTabla();}
+function buildSel(){const s=document.getElementById('sel-semana');s.innerHTML='';for(let w=1;w<=52;w++){const o=document.createElement('option');o.value=w;o.textContent=`Semana ${w}`;if(w===curWeek)o.selected=true;s.appendChild(o);}}
 function selSemana(){curWeek=+document.getElementById('sel-semana').value;render();}
-function cambiarSemana(d){
-  curWeek+=d;
-  if(curWeek<1){curWeek=52;curYear--;}
-  if(curWeek>52){curWeek=1;curYear++;}
-  document.getElementById('sel-semana').value=curWeek;render();
-}
+function cambiarSemana(d){curWeek+=d;if(curWeek<1){curWeek=52;curYear--;}if(curWeek>52){curWeek=1;curYear++;}document.getElementById('sel-semana').value=curWeek;render();}
 buildSel();
 cargarData();
 </script>
